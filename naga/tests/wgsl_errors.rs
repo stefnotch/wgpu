@@ -1057,6 +1057,29 @@ fn invalid_arrays() {
 }
 
 #[test]
+fn duplicated_group_binding() {
+    check_validation! {
+        "@group(0) @binding(0)
+        var<storage,read_write> foo: array<f32>;
+                
+        @group(0) @binding(0)
+        var<storage,read_write> bar: array<f32>;
+        
+        @vertex
+        fn main() -> @builtin(position) vec4<f32> {
+            let a = foo[0];
+            let b = bar[0];
+            return vec4<f32>(a, b, 0.0, 1.0);
+        }":
+        Err(naga::valid::ValidationError::EntryPoint {
+            stage: naga::ShaderStage::Vertex,
+            source: naga::valid::EntryPointError::BindingCollision(..),
+            ..
+        })
+    }
+}
+
+#[test]
 fn discard_in_wrong_stage() {
     check_validation! {
         "@compute @workgroup_size(1)
